@@ -1,0 +1,201 @@
+\documentclass{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{bbm}
+
+\begin{document}
+
+\section{Piecewise constant distance-based}
+
+Consider smoothing kernels of the form
+\begin{align*}
+K^\theta(x, x') &{}= k^\theta(d(x, x')) \\
+k^\theta(z) &{}= \sum_{j=1}^m \theta_i \mathbbm{1}\{z \le thresh_i\}
+\end{align*}
+first for a pre-specified $m$ and thresh settings.
+......
+
+
+\begin{align*}
+  & \text{arg\,max}_\theta \sum_{i=1}^n \log\left( \frac1{n-1} \sum_{i'=1,i'\neq i}^n K(x_i, x_{i'}) \right)
+  \\ & \text{s.t.} \sum_{i=1}^m \theta_m thresh_i = 1
+\end{align*}
+still have abuse of notation w/ $x$ here vs. above...
+
+plus latex cleanup
+
+\begin{align*}
+  & \text{arg\,max}_\theta \sum_{i=1}^n \log\left( \frac1{n-1} \sum_{i'=1,i'\neq i}^n \sum_{j=1}^m \theta_i \mathbbm{1}\{d(x_i, x_{i'}) \le thresh_i\} \right)
+  \\ & \text{s.t.} \sum_{i=1}^m \theta_m thresh_i = 1
+\end{align*}
+
+
+
+see orgzly notes
+
+
+\section{from dropbox}
+
+
+\section{Kernel ensemble/shaping}
+
+(Shaping here refers to choosing a kernel function shape, not kernel bandwidth matrix.)
+
+\subsection{Kernel density estimation}
+
+\begin{itemize}
+\item 
+Potential 1-D bandwidth selection goal:
+\[\max_h \sum_{i\in I} \log \left[ \frac{1}{\left|L_i\right| h}
+    \sum_{l\in L_i} K\left(\frac{x_i-x_l}{h}\right) \right] \]
+Common approach: grid search.
+\item
+Corresponding 1-D kernel ensemble/shaping goal:
+\[\max_{\gamma\in\Delta^{\left|M\right|}} \sum_{i\in I} \log \sum_{m\in M} \gamma_m \frac{1}{\left|L_i\right| h_m}
+    \sum_{l\in L_i} K\left(\frac{x_i-x_l}{h_m}\right) \]
+\end{itemize}
+This is a concave maximization problem.
+%
+\begin{itemize}
+\item
+
+  If $K$ is decreasing with increasing magnitude of its argument, then so does
+  the ensemble.
+
+\item
+
+  If $K$ is the boxcar kernel, this is very directly choosing the shape of the
+  kernel / values of $K$.
+  %
+  We could imagine optimizing over all bandwidths instead (optimizing
+  $\gamma(h)$), and this may simplify to optimizing over a $\gamma$ vector with
+  $H=\{x_i-x_l:i\in I, l\in L_i\}$.
+  %
+  In fact, this might even correspond to optimizing over all $K$ that are
+  decreasing with increasing magnitude arguments.
+  %
+  However, $\left|I\right|^2$ bandwidths is too many --- we'll need to cut some off.
+  %
+  Need thought about interpolation and extrapolation past last bandwidth.
+
+\item
+
+  Kernel shaping +
+  \href{http://www.stat.columbia.edu/~bodhi/Talks/NPCvxReg.pdf}{convex
+    regression}? Can we optimize over all log-concave kernels by specifying
+  tangent lines/planes to each encountered $x_i-x_l$ and constraining them?
+\item
+
+  Placing $\left|M\right|$ equally-weighted bandwidths? But 1-bandwidth
+  selection is an instance of this and is(?) hard\ldots What about for specific
+  kernel?
+
+\item
+
+  Something more rigid: kernel bandwidth distribution from a parametric family
+
+  \[\max_\theta \sum_{i\in I} \log \sum_{m\in M} \int_h f(h;\theta) \frac{1}{\left|L_i\right| h}
+    \sum_{l\in L_i} K\left(\frac{x_i-x_l}{h} \right) \,\mathrm{d}h \]
+
+  Here, $h$ is an integration variable, not an optimization variable; $\theta$
+  is the only optimization variable.
+  %
+  In fact, we could perhaps replace $h$ with $g(r)$ with $r$ the integration
+  variable + potentially adjust according to substitution rule (should just be
+  based on $(g^{-1})'(r)$, constant wrt optimization vars --- or may not need at
+  all if integration is over $r$).
+  %
+  If $f$ is concave (log-concave by itself is not sufficient), then this is
+  concave maximization. TODO inspect --- may want transformation if
+  possible so can cover an unbounded domain).
+  %
+  If $f$ is convex (log-convex would imply but isn't necessary), then maybe a
+  variational-ish alternative could be used.
+
+  Candidate for variationalish approach: exponential distribution, natural
+  without need for transformation.  No, not convex in $\lambda$ parm. 
+
+  Candidate for variationalish approach?: uniform over $(0,r)$ and use
+  $h=\frac1{1-r}-1$?  There is probably a problem with the discontinuity.
+
+  Candidate for variationalish approach: exponential distribution, using
+  $\beta$ parm --- no, still just log-concave, not convex/concave.
+
+  Candidate for nonvariationalish approach: exponential distribution, using
+  $\tilde\lambdas$ or $\tilde\beta$ parm? clearly log-concave, but need
+  concave\ldots and it's not.
+
+  TODO can marginalization / partial integration (?) log-concavity preservation
+  be useful to develop possibilities?
+
+  TODO for variationalish approach?: gamma/beta distributions in non-log-concave
+  ($\leadsto$ log-convex???) portions + transform... no, lack of log-concavity
+  (at least for beta) is just for the var, not the parms\ldots but can conjugate
+  distributions be used for anything here?
+
+  TODO reparameterization of beta distribution based on log moments involving
+  digamma function and old parameters?
+
+  for concave: piecewise linear (fixeda,0) -- (varymid,fixed?val) -- (fixedb,0)
+  parameterized by slope of one segment (or by varymid?)? Then at any point on
+  interval [a,b], varying slope should give linear increase then decrease? No,
+  slope could go to infinity but val's shouldn't. Work it out. Looks like two
+  connected concave sections that meet at discontinuous-slope sharp max; not
+  concave overall. Maybe not useful.
+
+\item
+
+  Just bandwidth selection using variational-ish approach with exponential
+  kernel (vs. exponential distribution over bandwidths)?
+
+\item
+
+  Ensemble of convex kernels using variational-ish approach?
+
+\item
+
+  Combined variational-ish exp-distribution bandwidth selection + kernel
+  ensemble / other shaping?
+
+\item
+
+  Choosing kernel bandwidth distribution from some friendly family and
+  marginalizing out to get kernel shape?
+
+\item
+
+  Choosing kernel shape in frequency domain? Or various (other) generating functions?
+
+\item
+
+  Optimizing in frequency domain?
+
+\item
+
+  Kernel ``shaping'' optimization problem actually to find how much to geopool /
+  timepool? Unfortunately this seems like it requires confronting convexity
+  issues or doing a 2-D grid / sampling / Latin hypercube if want to balance two
+  factors.  (Although, was there something about log posynomials and
+  convexity/concavity dependent on roots or some other criterion?  Might have
+  something to check there, but logsumexp GP seems wrong direction.)
+
+\end{itemize}
+
+\subsection{Kernel conditional density estimation}
+
+\subsection{Weighted quantile regression}
+
+\subsection{Multivariate considerations}
+
+\subsection{Localized kernel shapes}
+
+\subsection{Papers to read}
+\begin{itemize}
+\item \url{https://papers.nips.cc/paper/3393-bayesian-kernel-shaping-for-learning-control}
+\item CAKE paper
+\item \ldots
+\end{itemize}
+
+
+
+\end{document}
